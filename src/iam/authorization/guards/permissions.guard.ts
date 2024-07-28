@@ -3,22 +3,21 @@ import { Reflector } from '@nestjs/core';
 import { Observable } from 'rxjs';
 import { REQUEST_USER_KEY } from 'src/iam/iam.constants';
 import { ActiveUserData } from 'src/iam/interfaces/active-user-data.interface';
-import { Role } from 'src/users/enums/role.enum';
-import { ROLES_KEY } from '../../decorators/roles.dectorator';
+import { PERMISSIONS_KEY } from '../decorators/permissions.decorator';
+import { PermissionType } from '../permission.type';
 
 @Injectable()
-export class RolesGuard implements CanActivate {
+export class PermissionsGuard implements CanActivate {
   constructor(private readonly reflector: Reflector) {}
 
   canActivate(
     context: ExecutionContext,
   ): boolean | Promise<boolean> | Observable<boolean> {
-    const contextRoles = this.reflector.getAllAndOverride<Role[]>(ROLES_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    const contextPermissions = this.reflector.getAllAndOverride<
+      PermissionType[]
+    >(PERMISSIONS_KEY, [context.getHandler(), context.getClass()]);
 
-    if (!contextRoles) {
+    if (!contextPermissions) {
       return true;
     }
 
@@ -26,6 +25,8 @@ export class RolesGuard implements CanActivate {
       REQUEST_USER_KEY
     ];
 
-    return contextRoles.some((role) => user.role === role);
+    return contextPermissions.every((permission) =>
+      user.permissions?.includes(permission),
+    );
   }
 }
